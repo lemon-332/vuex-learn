@@ -1,12 +1,12 @@
 <template>
-  <h1>{{ store.state.count }}</h1>
+  <!-- <h1>{{ store.state.count }}</h1> -->
   <button @click="add">修改</button>
   <button @click="addAsync">异步修改</button>
 </template>
 
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
-import { useStore } from "vuex";
+import { useStore } from "@/vuex";
 
 @Options({})
 export default class App extends Vue {
