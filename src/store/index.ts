@@ -21,4 +21,40 @@ export default createStore({
       }, 1000);
     },
   },
+  modules: {
+    aModules: {
+      state: {
+        aCount: 5,
+      },
+      getters: {
+        aDouble(state) {
+          return state.aCount * 2;
+        },
+      },
+      mutations: {
+        aAdd(state, payload) {
+          state.aCount += payload;
+        },
+      },
+      actions: {
+        aAddAsync({ commit }, payload) {
+          setTimeout(() => {
+            commit("aAdd", payload);
+          }, 1000);
+        },
+      },
+    },
+    bModules: {
+      state: {
+        bCount: 5,
+      },
+      modules: {
+        cModules: {
+          state: {
+            cCount: 5,
+          },
+        },
+      },
+    },
+  },
 });

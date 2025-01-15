@@ -1,62 +1,37 @@
 import { reactive } from "vue";
 import { forEachValue } from "./utils";
 import { storeKey } from "./injectKey";
+import { ModuleCollection } from "./module/moduleCollection";
+
+const installModule = (store: any, rootState: any, path: any, module: any) => {
+  let isRoot = !path.length; // 根模块
+
+  if (!isRoot) {
+    const parentState = path
+      .slice(0, -1)
+      .reduce((state, key) => state[key], rootState);
+
+    parentState[path[path.length - 1]] = module.state;
+  }
+
+  module.forEachChild((child, key) => {
+    installModule(store, rootState, path.concat(key), child);
+  });
+};
 
 export default class Store {
   _state: any;
   getters: any;
   _mutations: any;
   _actions: any;
+
+  private _modules: ModuleCollection;
   constructor(options: any) {
-    const store = this;
-    // vuex3 使用一个新的Vue实例 new Vue
-    // vuex4 使用reactive
-    // 对于这里为什么要包一层data，因为vuex有个api replaceState 可以替换state，这样就可以
-    // 直接修改 store._state.data 不用reactive 不用重新赋值
-    store._state = reactive({ data: options.state });
-    store.getters = {};
-    forEachValue(options.getters, (fn, key) => {
-      Object.defineProperty(store.getters, key, {
-        get: () => fn(store.state),
-      });
-    });
-
-    store._mutations = Object.create(null);
-    store._actions = Object.create(null);
-
-    const _mutations = options.mutations;
-    const _actions = options.actions;
-
-    forEachValue(_mutations, (mutation, key) => {
-      store._mutations[key] = (payload) => {
-        // 改变this指向为store ,，并且将state传入
-        // this.$store.commit('add', 1)
-        /**
-           * mutations: {
-              add(state, payload) {
-                  state.count += payload;
-              },
-           },
-           */
-        mutation.call(store, store.state, payload);
-      };
-    });
-
-    forEachValue(_actions, (action, key) => {
-      store._actions[key] = (payload) => {
-        // 参数不一样   addAsync({ commit }, payload) {}
-        action.call(store, store, payload);
-      };
-    });
+    this._modules = new ModuleCollection(options);
+    const state = this._modules.root.state;
+    // 类似的 this.store.state.aModule.state
+    installModule(this, state, [], this._modules.root);
   }
-
-  commit = (type: any, payload: any) => {
-    this._mutations[type](payload);
-  };
-
-  dispatch = (type: any, payload: any) => {
-    this._actions[type](payload);
-  };
 
   // createApp(App).use(store).mount("#app");  使用use绑定，那就需要install方法
   install(app, injectKey?) {
@@ -64,10 +39,6 @@ export default class Store {
     app.provide(injectKey || storeKey, this);
     // 挂载到全局属性上 ==   Vue.prototype.$store = this;
     app.config.globalProperties.$store = this;
-  }
-
-  get state() {
-    return this._state.data;
   }
 }
 

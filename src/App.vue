@@ -1,6 +1,6 @@
 <template>
   <!-- <h1>{{ store.state.count }}</h1> -->
-  <div>{{ $store.state.count }}</div>
+  <!-- <div>{{ $st ore.state.count }}</div> -->
   <button @click="add">修改</button>
   <button @click="addAsync">异步修改</button>
   <button @click="$store.state.count++">异步修改</button>
