@@ -23,7 +23,7 @@ export default class App extends Vue {
   }
 
   mounted() {
-    console.log(this.store,'333');
+    // console.log(this.store,'333');
   }
 }
 </script>

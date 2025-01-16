@@ -8,6 +8,7 @@ export class ModuleCollection {
     this.root = null;
     this.register(rootModule, []);
   }
+
   register(rawModule: any, path: any) {
     const newModule = new Module(rawModule);
     if (path.length === 0) {
@@ -38,3 +39,20 @@ export class ModuleCollection {
     }
   }
 }
+
+// 格式化之后的样子
+// const root = {
+//   _raw: rawModule,
+//   state: rawModule.state,
+//   _children: {
+//     a: {
+//       _raw: rawModule.a,
+//       state: rawModule.a.state,
+//       _children: {
+//         b: {
+//           _raw   : rawModule.a.b,
+//           state: rawModule.a.b.state,
+//           _children: {},
+//       },
+//   },
+// };

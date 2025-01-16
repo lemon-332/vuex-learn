@@ -27,17 +27,17 @@ export default createStore({
         aCount: 5,
       },
       getters: {
-        aDouble(state) {
+        adouble(state) {
           return state.aCount * 2;
         },
       },
       mutations: {
-        aAdd(state, payload) {
+        add(state, payload) {
           state.aCount += payload;
         },
       },
       actions: {
-        aAddAsync({ commit }, payload) {
+        addAsync({ commit }, payload) {
           setTimeout(() => {
             commit("aAdd", payload);
           }, 1000);
