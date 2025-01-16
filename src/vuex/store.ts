@@ -1,4 +1,4 @@
-import { reactive } from "vue";
+import { reactive, watch } from "vue";
 import { storeKey } from "./injectKey";
 import { ModuleCollection } from "./module/moduleCollection";
 import { forEachValue, isPromise } from "./utils";
@@ -48,7 +48,7 @@ const installModule = (store: any, rootState: any, path: any, module: any) => {
 
   module.forEachAction((action, key) => {
     const entry =
-      store._actions[namespaced + key ] ||
+      store._actions[namespaced + key] ||
       (store._actions[namespaced + key] = []);
     entry.push((payload: any) => {
       // this.store.dispatch("aModule/actionName",payload);
@@ -72,12 +72,17 @@ export default class Store {
   _wrapperGetters: any;
   _state: any;
   _modules: ModuleCollection;
+  strict: boolean;
+  _committing: boolean;
 
   constructor(options: any) {
     this._modules = new ModuleCollection(options);
     this._wrapperGetters = Object.create(null);
     this._mutations = Object.create(null);
     this._actions = Object.create(null);
+
+    this.strict = options.strict || false;
+    this._committing = false;
 
     // 定义状态
     const state = this._modules.root.state;
@@ -89,10 +94,21 @@ export default class Store {
     console.log(this, state);
   }
 
+  _withCommitting(fn) {
+    // 这里为什么不直接写true 和 false的原因，是可能之前为true，
+    // 所以直接保存之前的状态，后面改回就行
+    const committing = this._committing;
+    this._committing = true;
+    fn();
+    this._committing = committing;
+  }
+
   commit = (type: any, payload: any) => {
     const entry = this._mutations[type] || [];
-    entry.forEach((handler: any) => {
-      handler(payload);
+    this._withCommitting(() => {
+      entry.forEach((handler: any) => {
+        handler(payload);
+      });
     });
   };
 
@@ -125,6 +141,23 @@ const resetStoreState = (store: any, state: any) => {
       enumerable: true,
     });
   });
+
+  if (store.strict) {
+    enableStrictMode(store);
+  }
+};
+
+const enableStrictMode = (store: any) => { 
+  watch(
+    () => store._state.data,
+    () => {
+      console.assert(store._committing, "不允许在mutation之外修改状态");
+    },
+    {
+      deep: true,
+      flush: "sync",
+    }
+  );
 };
 
 export const createStore = (options: any) => {

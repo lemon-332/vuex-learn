@@ -21,7 +21,7 @@ export default class App extends Vue {
 
   private addAsync() {
     this.store.dispatch("addAsync", 1).then(() => {
-      alert("ok");
+      // alert("ok");
     });
   }
 
