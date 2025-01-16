@@ -74,6 +74,7 @@ export default class Store {
   _modules: ModuleCollection;
   strict: boolean;
   _committing: boolean;
+  _subscribes: any[];
 
   constructor(options: any) {
     this._modules = new ModuleCollection(options);
@@ -91,7 +92,14 @@ export default class Store {
 
     resetStoreState(this, state);
 
+    this._subscribes = [];
+    options?.plugins.forEach((plugin: any) => plugin(this));
+
     console.log(this, state);
+  }
+
+  subscribe(fn) {
+    this._subscribes.push(fn);
   }
 
   _withCommitting(fn) {
@@ -103,6 +111,13 @@ export default class Store {
     this._committing = committing;
   }
 
+  replaceState(state: any) {
+    // 严格模式下不能直接修改状态
+    this._withCommitting(() => {
+      this._state.data = state;
+    });
+  }
+
   commit = (type: any, payload: any) => {
     const entry = this._mutations[type] || [];
     this._withCommitting(() => {
@@ -110,6 +125,7 @@ export default class Store {
         handler(payload);
       });
     });
+    this._subscribes.forEach((fn: any) => fn({ type, payload }, this._state));
   };
 
   dispatch = (type: any, payload: any) => {
@@ -147,7 +163,7 @@ const resetStoreState = (store: any, state: any) => {
   }
 };
 
-const enableStrictMode = (store: any) => { 
+const enableStrictMode = (store: any) => {
   watch(
     () => store._state.data,
     () => {

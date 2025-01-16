@@ -1,7 +1,7 @@
 <template>
   <h1>{{ store.state.count }}</h1>
   <h1>{{ store.state.aModules.aCount }}</h1>
-  <!-- <div>{{ $st ore.state.count }}</div> -->
+  <!-- <div>{{ $st ore.stat</div> -->
   <button @click="add">修改</button>
   <button @click="addAsync">异步修改</button>
   <button @click="$store.state.count++">异步修改</button>
