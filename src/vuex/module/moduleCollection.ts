@@ -45,6 +45,7 @@ export class ModuleCollection {
         this.register(childrenModule, path);
       });
     }
+    return newModule;
   }
 }
 

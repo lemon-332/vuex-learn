@@ -25,7 +25,9 @@ const installModule = (store: any, rootState: any, path: any, module: any) => {
       .slice(0, -1)
       .reduce((state, key) => state[key], rootState);
 
-    parentState[path[path.length - 1]] = module.state;
+    store._withCommitting(() => {
+      parentState[path[path.length - 1]] = module.state;
+      });
   }
 
   module.forEachGetter((getter, key) => {
@@ -143,6 +145,16 @@ export default class Store {
     app.provide(injectKey || storeKey, this);
     // 挂载到全局属性上 ==   Vue.prototype.$store = this;
     app.config.globalProperties.$store = this;
+  }
+
+  registerModule(path: any, rawModule: any) {
+    if (typeof path === "string") path = [path];
+    // 1.注册模块
+    const newModule = this._modules.register(rawModule, path);
+    // 2.安装模块
+    installModule(this, this.state, path, newModule);
+    // 3.重置状态
+    resetStoreState(this, this.state);
   }
 }
 
