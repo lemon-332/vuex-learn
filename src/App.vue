@@ -1,5 +1,6 @@
 <template>
-  <!-- <h1>{{ store.state.count }}</h1> -->
+  <h1>{{ store.state.count }}</h1>
+  <h1>{{ store.state.aModules.aCount }}</h1>
   <!-- <div>{{ $st ore.state.count }}</div> -->
   <button @click="add">修改</button>
   <button @click="addAsync">异步修改</button>
@@ -19,7 +20,9 @@ export default class App extends Vue {
   }
 
   private addAsync() {
-    this.store.dispatch("addAsync", 1);
+    this.store.dispatch("addAsync", 1).then(() => {
+      alert("ok");
+    });
   }
 
   mounted() {

@@ -16,13 +16,17 @@ export default createStore({
   },
   actions: {
     addAsync({ commit }, payload) {
-      setTimeout(() => {
-        commit("add", payload);
-      }, 1000);
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          commit("add", payload);
+          resolve("11");
+        }, 1000);
+      });
     },
   },
   modules: {
     aModules: {
+      namespaced: true, // 开启命名空间
       state: {
         aCount: 5,
       },
@@ -45,11 +49,13 @@ export default createStore({
       },
     },
     bModules: {
+      namespaced: true,
       state: {
         bCount: 5,
       },
       modules: {
         cModules: {
+          namespaced: true, // 开启命名空间
           state: {
             cCount: 5,
           },

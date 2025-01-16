@@ -1,6 +1,7 @@
+import { reactive } from "vue";
 import { storeKey } from "./injectKey";
 import { ModuleCollection } from "./module/moduleCollection";
-import { isPromise } from "./utils";
+import { forEachValue, isPromise } from "./utils";
 
 const getNestedState = (state: any, path: any) => {
   return path.length ? path.reduce((state, key) => state[key], state) : state;
@@ -8,6 +9,8 @@ const getNestedState = (state: any, path: any) => {
 
 const installModule = (store: any, rootState: any, path: any, module: any) => {
   let isRoot = !path.length; // 根模块
+
+  const namespaced = store._modules.getNamespaced(path);
 
   if (!isRoot) {
     /**
@@ -26,7 +29,7 @@ const installModule = (store: any, rootState: any, path: any, module: any) => {
   }
 
   module.forEachGetter((getter, key) => {
-    store._wrapperGetters[key] = () => {
+    store._wrapperGetters[namespaced + key] = () => {
       // 这里不能使用 module.state，因为module.state不是响应式的，但是store._state是响应式的
       //   return getter(module.state);
       return getter(getNestedState(store.state, path));
@@ -34,7 +37,9 @@ const installModule = (store: any, rootState: any, path: any, module: any) => {
   });
 
   module.forEachMutation((mutation, key) => {
-    const entry = store._mutations[key] || (store._mutations[key] = []);
+    const entry =
+      store._mutations[namespaced + key] ||
+      (store._mutations[namespaced + key] = []);
     entry.push((payload: any) => {
       // this.store.commit("aModule/mutationName",payload);
       mutation.call(store, getNestedState(store.state, path), payload);
@@ -42,7 +47,9 @@ const installModule = (store: any, rootState: any, path: any, module: any) => {
   });
 
   module.forEachAction((action, key) => {
-    const entry = store._actions[key] || (store._actions[key] = []);
+    const entry =
+      store._actions[namespaced + key ] ||
+      (store._actions[namespaced + key] = []);
     entry.push((payload: any) => {
       // this.store.dispatch("aModule/actionName",payload);
       // 第一个参数是绑定this的指向为store，第二个是 addAsync({ commit }, payload) {  结构的时候的 commit
@@ -63,8 +70,9 @@ export default class Store {
   _mutations: any;
   _actions: any;
   _wrapperGetters: any;
+  _state: any;
+  _modules: ModuleCollection;
 
-  private _modules: ModuleCollection;
   constructor(options: any) {
     this._modules = new ModuleCollection(options);
     this._wrapperGetters = Object.create(null);
@@ -76,7 +84,25 @@ export default class Store {
     // 类似的 this.store.state.aModule.state
     installModule(this, state, [], this._modules.root);
 
+    resetStoreState(this, state);
+
     console.log(this, state);
+  }
+
+  commit = (type: any, payload: any) => {
+    const entry = this._mutations[type] || [];
+    entry.forEach((handler: any) => {
+      handler(payload);
+    });
+  };
+
+  dispatch = (type: any, payload: any) => {
+    const entry = this._actions[type] || [];
+    return Promise.all(entry.map((handler: any) => handler(payload)));
+  };
+
+  get state() {
+    return this._state.data;
   }
 
   // createApp(App).use(store).mount("#app");  使用use绑定，那就需要install方法
@@ -87,6 +113,19 @@ export default class Store {
     app.config.globalProperties.$store = this;
   }
 }
+
+const resetStoreState = (store: any, state: any) => {
+  store._state = reactive({ data: state });
+  const wrappedGetters = store._wrapperGetters;
+
+  store.getters = {};
+  forEachValue(wrappedGetters, (getter, key) => {
+    Object.defineProperty(store.getters, key, {
+      get: getter,
+      enumerable: true,
+    });
+  });
+};
 
 export const createStore = (options: any) => {
   return new Store(options);

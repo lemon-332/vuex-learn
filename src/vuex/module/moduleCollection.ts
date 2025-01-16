@@ -9,6 +9,14 @@ export class ModuleCollection {
     this.register(rootModule, []);
   }
 
+  getNamespaced(path: any) {
+    let module = this.root;
+    return path.reduce((namespaced, key) => {
+      module = module.getChild(key);
+      return namespaced + (module.namespaced ? key + "/" : "");
+    }, "");
+  }
+
   register(rawModule: any, path: any) {
     const newModule = new Module(rawModule);
     if (path.length === 0) {
