@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Promise</title>
+  </head>
+  <body>
+    <script>
+      const PENDING = "pending";
+      const FULFILLED = "fulfilled";
+      const REJECTED = "rejected";
+
+      class Promise {
+        reason = null;
+        value = null;
+        state = PENDING;
+
+        constructor(executor) {
+          const resolve = (value) => {
+            if (this.state === PENDING) {
+              this.state = FULFILLED;
+              this.value = value;
+            }
+          };
+          const reject = (reason) => {
+            if (this.state === PENDING) {
+              this.state = REJECTED;
+              this.reason = reason;
+            }
+          };
+
+          try {
+            executor(resolve, reject);
+          } catch (error) {
+            reject(error);
+          }
+        }
+
+        then(onFulfilled, onRejected) {
+          if (this.state === FULFILLED) {
+            onFulfilled(this.value);
+          }
+          if (this.state === REJECTED) {
+            onRejected(this.reason);
+          }
+        }
+      }
+      const p = new Promise((resolve, reject) => {
+        reject("ff");
+      });
+      console.log(p);
+    </script>
+  </body>
+</html>
